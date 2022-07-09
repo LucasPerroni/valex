@@ -4,6 +4,7 @@ const errors = {
   unauthorized: 401,
   forbidden: 403,
   not_found: 404,
+  conflict: 409,
   unprocessable: 422,
 }
 
@@ -17,6 +18,10 @@ export function errorForbidden(message: string = null) {
 
 export function errorNotFound(message: string = null) {
   throw { type: "not_found", message }
+}
+
+export function errorConflict(message: string = null) {
+  throw { type: "conflict", message }
 }
 
 export function errorUnprocessable(message: string = null) {

@@ -3,9 +3,10 @@ import dayjs from "dayjs"
 import dotenv from "dotenv"
 import Cryptr from "cryptr"
 
-import { errorForbidden, errorNotFound } from "../middlewares/errorHandler.js"
+import { errorForbidden, errorNotFound, errorUnprocessable } from "../middlewares/errorHandler.js"
 import { findByApiKey } from "../repositories/companyRepository.js"
 import { findById } from "../repositories/employeeRepository.js"
+import { Card, findById as findCardById, update } from "../repositories/cardRepository.js"
 
 dotenv.config()
 
@@ -31,4 +32,36 @@ export default function createCardData() {
   const expirationDate = dayjs().add(5, "y").format("MM/YY")
 
   return { number, securityCode: cryptSecurityCode, expirationDate }
+}
+
+export async function getCardById(id: string, cvc: string) {
+  const cryptr = new Cryptr(process.env.CRYPTR_KEY)
+
+  if (!Number(id)) {
+    errorUnprocessable("Card Id must be a number")
+  }
+
+  const card = await findCardById(Number(id))
+  if (!card) {
+    errorNotFound("Couldn't find a card with that id")
+  } else if (cryptr.decrypt(card.securityCode) !== cvc) {
+    errorForbidden("Wrong CVC")
+  }
+
+  return card
+}
+
+export function checkCardInfo(card: Card) {
+  const today = dayjs().format("MM/YY").split("/")
+  const expirationDate = card.expirationDate.split("/")
+  if (
+    Number(expirationDate[1]) < Number(today[1]) ||
+    (Number(expirationDate[1]) === Number(today[1]) && Number(expirationDate[0]) < Number(today[0]))
+  ) {
+    errorForbidden("This card already expired")
+  }
+
+  if (!card.isBlocked) {
+    errorForbidden("This card is already activated")
+  }
 }
