@@ -60,7 +60,7 @@ export async function activateCard(req: Request, res: Response) {
 
 export async function blockCard(req: Request, res: Response) {
   const { id } = req.params
-  const { password }: { cvc: string; password: string } = req.body
+  const { password }: { password: string } = req.body
 
   const card = await getCardById(id)
   checkCardInfo(card, false, password)
@@ -75,7 +75,7 @@ export async function blockCard(req: Request, res: Response) {
 
 export async function unblockCard(req: Request, res: Response) {
   const { id } = req.params
-  const { password }: { cvc: string; password: string } = req.body
+  const { password }: { password: string } = req.body
 
   const card = await getCardById(id)
   checkCardInfo(card, true, password)

@@ -61,27 +61,32 @@ export function checkCVC(card: Card, cvc: string) {
   }
 }
 
-export function checkCardInfo(card: Card, blockMustBe: boolean, password: string = null) {
+export function checkCardInfo(
+  card: Card,
+  isBlockMustBe: boolean,
+  password: string = null,
+  blockMissingPassword: boolean = true
+) {
   const today = dayjs().format("MM/YY").split("/")
   const expirationDate = card.expirationDate.split("/")
   if (
     Number(expirationDate[1]) < Number(today[1]) ||
     (Number(expirationDate[1]) === Number(today[1]) && Number(expirationDate[0]) < Number(today[0]))
   ) {
-    errorForbidden("This card already expired")
+    errorForbidden("This card expired")
   }
 
-  if (blockMustBe && !card.isBlocked) {
-    errorConflict("This card is already activated")
-  } else if (!blockMustBe && card.isBlocked) {
-    errorConflict("This card is already blocked")
+  if (isBlockMustBe && !card.isBlocked) {
+    errorConflict("This card is activated")
+  } else if (!isBlockMustBe && card.isBlocked) {
+    errorConflict("This card is blocked")
   }
 
   if (password && !card.password) {
     errorUnprocessable("This card doesn't have a password")
   } else if (password && !bcrypt.compareSync(password, card.password)) {
     errorForbidden("Wrong password")
-  } else if (!password && card.password) {
-    errorForbidden("This card was activated before")
+  } else if (!password && card.password && blockMissingPassword) {
+    errorForbidden("This card has a password")
   }
 }
