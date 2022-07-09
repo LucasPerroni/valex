@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import bcrypt from "bcrypt"
 
 import { findByTypeAndEmployeeId, insert, update } from "../repositories/cardRepository.js"
-import { errorConflict, errorForbidden } from "../middlewares/errorHandler.js"
+import { errorConflict } from "../middlewares/errorHandler.js"
 import createCardData, {
   checkCardInfo,
   checkCVC,
@@ -67,6 +67,21 @@ export async function blockCard(req: Request, res: Response) {
 
   const updateInfo = {
     isBlocked: true,
+  }
+
+  await update(Number(id), updateInfo)
+  res.sendStatus(200)
+}
+
+export async function unblockCard(req: Request, res: Response) {
+  const { id } = req.params
+  const { password }: { cvc: string; password: string } = req.body
+
+  const card = await getCardById(id)
+  checkCardInfo(card, true, password)
+
+  const updateInfo = {
+    isBlocked: false,
   }
 
   await update(Number(id), updateInfo)

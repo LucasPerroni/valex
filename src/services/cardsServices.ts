@@ -4,7 +4,12 @@ import dotenv from "dotenv"
 import Cryptr from "cryptr"
 import bcrypt from "bcrypt"
 
-import { errorForbidden, errorNotFound, errorUnprocessable } from "../middlewares/errorHandler.js"
+import {
+  errorConflict,
+  errorForbidden,
+  errorNotFound,
+  errorUnprocessable,
+} from "../middlewares/errorHandler.js"
 import { findByApiKey } from "../repositories/companyRepository.js"
 import { findById } from "../repositories/employeeRepository.js"
 import { Card, findById as findCardById, update } from "../repositories/cardRepository.js"
@@ -67,12 +72,14 @@ export function checkCardInfo(card: Card, blockMustBe: boolean, password: string
   }
 
   if (blockMustBe && !card.isBlocked) {
-    errorForbidden("This card is already activated")
+    errorConflict("This card is already activated")
   } else if (!blockMustBe && card.isBlocked) {
-    errorForbidden("This card is already blocked")
+    errorConflict("This card is already blocked")
   }
 
-  if (password && !bcrypt.compareSync(password, card.password)) {
+  if (password && !card.password) {
+    errorUnprocessable("This card doesn't have a password")
+  } else if (password && !bcrypt.compareSync(password, card.password)) {
     errorForbidden("Wrong password")
   } else if (!password && card.password) {
     errorForbidden("This card was activated before")
