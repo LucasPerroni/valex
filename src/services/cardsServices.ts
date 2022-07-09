@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker"
 import dayjs from "dayjs"
 import dotenv from "dotenv"
 import Cryptr from "cryptr"
+import bcrypt from "bcrypt"
 
 import { errorForbidden, errorNotFound, errorUnprocessable } from "../middlewares/errorHandler.js"
 import { findByApiKey } from "../repositories/companyRepository.js"
@@ -34,9 +35,7 @@ export default function createCardData() {
   return { number, securityCode: cryptSecurityCode, expirationDate }
 }
 
-export async function getCardById(id: string, cvc: string) {
-  const cryptr = new Cryptr(process.env.CRYPTR_KEY)
-
+export async function getCardById(id: string) {
   if (!Number(id)) {
     errorUnprocessable("Card Id must be a number")
   }
@@ -44,14 +43,20 @@ export async function getCardById(id: string, cvc: string) {
   const card = await findCardById(Number(id))
   if (!card) {
     errorNotFound("Couldn't find a card with that id")
-  } else if (cryptr.decrypt(card.securityCode) !== cvc) {
-    errorForbidden("Wrong CVC")
   }
 
   return card
 }
 
-export function checkCardInfo(card: Card) {
+export function checkCVC(card: Card, cvc: string) {
+  const cryptr = new Cryptr(process.env.CRYPTR_KEY)
+
+  if (cryptr.decrypt(card.securityCode) !== cvc) {
+    errorForbidden("Wrong CVC")
+  }
+}
+
+export function checkCardInfo(card: Card, blockMustBe: boolean, password: string = null) {
   const today = dayjs().format("MM/YY").split("/")
   const expirationDate = card.expirationDate.split("/")
   if (
@@ -61,7 +66,15 @@ export function checkCardInfo(card: Card) {
     errorForbidden("This card already expired")
   }
 
-  if (!card.isBlocked) {
+  if (blockMustBe && !card.isBlocked) {
     errorForbidden("This card is already activated")
+  } else if (!blockMustBe && card.isBlocked) {
+    errorForbidden("This card is already blocked")
+  }
+
+  if (password && !bcrypt.compareSync(password, card.password)) {
+    errorForbidden("Wrong password")
+  } else if (!password && card.password) {
+    errorForbidden("This card was activated before")
   }
 }

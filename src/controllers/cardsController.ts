@@ -3,9 +3,10 @@ import dotenv from "dotenv"
 import bcrypt from "bcrypt"
 
 import { findByTypeAndEmployeeId, insert, update } from "../repositories/cardRepository.js"
-import { errorConflict } from "../middlewares/errorHandler.js"
+import { errorConflict, errorForbidden } from "../middlewares/errorHandler.js"
 import createCardData, {
   checkCardInfo,
+  checkCVC,
   getCardById,
   getCompanyAndEmployee,
 } from "../services/cardsServices.js"
@@ -44,12 +45,28 @@ export async function activateCard(req: Request, res: Response) {
   const { id } = req.params
   const { cvc, password }: { cvc: string; password: string } = req.body
 
-  const card = await getCardById(id, cvc)
-  checkCardInfo(card)
+  const card = await getCardById(id)
+  checkCVC(card, cvc)
+  checkCardInfo(card, true)
 
   const updateInfo = {
     password: bcrypt.hashSync(password, Number(process.env.BCRYPT_SALT)),
     isBlocked: false,
+  }
+
+  await update(Number(id), updateInfo)
+  res.sendStatus(200)
+}
+
+export async function blockCard(req: Request, res: Response) {
+  const { id } = req.params
+  const { password }: { cvc: string; password: string } = req.body
+
+  const card = await getCardById(id)
+  checkCardInfo(card, false, password)
+
+  const updateInfo = {
+    isBlocked: true,
   }
 
   await update(Number(id), updateInfo)
