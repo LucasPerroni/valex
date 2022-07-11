@@ -8,25 +8,35 @@ import {
   errorConflict,
   errorForbidden,
   errorNotFound,
+  errorUnauthorized,
   errorUnprocessable,
 } from "../middlewares/errorHandler.js"
 import { findByApiKey } from "../repositories/companyRepository.js"
 import { findById } from "../repositories/employeeRepository.js"
-import { Card, findById as findCardById, update } from "../repositories/cardRepository.js"
+import { Card, findByCardDetails, findById as findCardById } from "../repositories/cardRepository.js"
 
 dotenv.config()
 
-export async function getCompanyAndEmployee(apiKey: string, employeeId: number) {
-  const company = await findByApiKey(apiKey)
+export async function getEmployee(employeeId: number, companyId: number = null) {
   const employee = await findById(employeeId)
 
-  if (!company || !employee) {
-    errorNotFound("Company or Employee not found")
-  } else if (employee.companyId !== company.id) {
+  if (!employee) {
+    errorNotFound("Employee not found")
+  } else if (companyId && employee.companyId !== companyId) {
     errorForbidden("This employee isn't in this company")
   }
 
-  return { company, employee }
+  return employee
+}
+
+export async function getCompany(apiKey: string) {
+  const company = await findByApiKey(apiKey)
+
+  if (!company) {
+    errorNotFound("Company or Employee not found")
+  }
+
+  return company
 }
 
 export default function createCardData() {
@@ -49,6 +59,28 @@ export async function getCardById(id: string) {
   if (!card) {
     errorNotFound("Couldn't find a card with that id")
   }
+
+  return card
+}
+
+export async function getCardByNumber(
+  number: string,
+  expirationDate: string,
+  cardholderName: string,
+  password: string,
+  blockError: boolean = true
+) {
+  const cryptr = new Cryptr(process.env.CRYPTR_KEY)
+  const card = await findByCardDetails(number, cardholderName, expirationDate)
+
+  if (!card || !bcrypt.compareSync(password, card.password)) {
+    return blockError ? errorNotFound("Card not found") : null
+  } else if (!bcrypt.compareSync(password, card.password)) {
+    return blockError ? errorUnauthorized("Wrong password") : null
+  }
+
+  delete card.password
+  card.securityCode = cryptr.decrypt(card.securityCode)
 
   return card
 }

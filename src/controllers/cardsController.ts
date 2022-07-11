@@ -8,7 +8,9 @@ import createCardData, {
   checkCardInfo,
   checkCVC,
   getCardById,
-  getCompanyAndEmployee,
+  getCardByNumber,
+  getCompany,
+  getEmployee,
 } from "../services/cardsServices.js"
 import formatName from "../utils/formatName.js"
 import { getCardBalance } from "../services/paymentServices.js"
@@ -19,7 +21,8 @@ export async function createCard(req: Request, res: Response) {
   const { apiKey } = res.locals
 
   const { number, securityCode, expirationDate } = createCardData()
-  const { company, employee } = await getCompanyAndEmployee(apiKey, req.body.employeeId)
+  const company = await getCompany(apiKey)
+  const employee = await getEmployee(req.body.employeeId, company.id)
   formatName(employee)
 
   const cardData = {
@@ -96,4 +99,31 @@ export async function cardLog(req: Request, res: Response) {
   const log = await getCardBalance(card)
 
   res.status(200).send(log)
+}
+
+export async function cardInfo(req: Request, res: Response) {
+  const cardArray = []
+  const {
+    employeeId,
+    cards,
+  }: { employeeId: number; cards: [{ number: string; expirationDate: string; password: string }] } = req.body
+
+  const employee = await getEmployee(employeeId)
+  formatName(employee)
+
+  for (let i = 0; i < cards.length; i++) {
+    const card = await getCardByNumber(
+      cards[i].number,
+      cards[i].expirationDate,
+      employee.fullName,
+      cards[i].password,
+      false
+    )
+
+    if (card) {
+      cardArray.push(card)
+    }
+  }
+
+  res.status(200).send({ cards: cardArray })
 }

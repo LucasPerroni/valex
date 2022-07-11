@@ -43,7 +43,7 @@ export async function findByTypeAndEmployeeId(type: TransactionTypes, employeeId
 export async function findByCardDetails(number: string, cardholderName: string, expirationDate: string) {
   const result = await connection.query<Card, [string, string, string]>(
     ` SELECT 
-        * 
+        id, number, "cardholderName", "securityCode", "expirationDate", password
       FROM cards 
       WHERE number=$1 AND "cardholderName"=$2 AND "expirationDate"=$3`,
     [number, cardholderName, expirationDate]
