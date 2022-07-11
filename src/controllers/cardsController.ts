@@ -11,6 +11,7 @@ import createCardData, {
   getCompanyAndEmployee,
 } from "../services/cardsServices.js"
 import formatName from "../utils/formatName.js"
+import { getCardBalance } from "../services/paymentServices.js"
 
 dotenv.config()
 
@@ -86,4 +87,13 @@ export async function unblockCard(req: Request, res: Response) {
 
   await update(Number(id), updateInfo)
   res.sendStatus(200)
+}
+
+export async function cardLog(req: Request, res: Response) {
+  const { id } = req.params
+
+  const card = await getCardById(id)
+  const log = await getCardBalance(card)
+
+  res.status(200).send(log)
 }

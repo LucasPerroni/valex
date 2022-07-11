@@ -12,7 +12,7 @@ export async function createPayment(req: Request, res: Response) {
   const card = await getCardById(id)
   checkCardInfo(card, false, password)
   const business = await getBusinessById(businessId, card.type)
-  const balance = await getCardBalance(card, true)
+  const { balance } = await getCardBalance(card, true)
 
   if (balance < amount) {
     errorUnauthorized("The amount to be paid is greater than the card balance")

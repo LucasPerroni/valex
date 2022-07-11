@@ -1,6 +1,6 @@
 import { Router } from "express"
 
-import { activateCard, blockCard, createCard, unblockCard } from "../controllers/cardsController.js"
+import { activateCard, blockCard, cardLog, createCard, unblockCard } from "../controllers/cardsController.js"
 import checkAPIKey from "../middlewares/checkAPIKey.js"
 import validateSchema from "../middlewares/validateSchema.js"
 import { activateSchema } from "../schemas/activateSchema.js"
@@ -13,5 +13,6 @@ cardsRouter.post("/cards/creation", validateSchema(cardSchema), checkAPIKey, cre
 cardsRouter.put("/cards/activate/:id", validateSchema(activateSchema), activateCard)
 cardsRouter.put("/cards/block/:id", validateSchema(blockSchema), blockCard)
 cardsRouter.put("/cards/unblock/:id", validateSchema(blockSchema), unblockCard)
+cardsRouter.get("/cards/log/:id", cardLog)
 
 export default cardsRouter

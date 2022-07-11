@@ -16,7 +16,7 @@ export async function getCardBalance(card: Card, mustBePositive: boolean = false
     errorUnauthorized("This card has negative balance")
   }
 
-  return balance
+  return { balance, recharges, payments }
 }
 
 export async function getBusinessById(id: number, type: string = null) {
